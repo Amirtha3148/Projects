@@ -1,0 +1,19 @@
+# VRQ-HeadTracker Python Requirements
+# Core dependencies for dual-camera 6-DoF head tracking
+
+# Computer Vision
+opencv-python==4.8.1.78
+opencv-contrib-python==4.8.1.78
+
+# Pose Estimation
+mediapipe==0.10.8
+
+# Mathematics
+numpy==1.24.3
+scipy==1.11.4
+
+# WebSocket Communication
+websockets==12.0
+
+# Utilities
+python-dateutil==2.8.2
