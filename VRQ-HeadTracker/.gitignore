@@ -1,4 +1,12 @@
-# Unity generated folders
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+
+# Unity
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -7,19 +15,9 @@
 [Ll]ogs/
 UserSettings/
 
-# MemoryCaptures can get huge
-MemoryCaptures/
-
-# Asset meta data should only be ignored when the corresponding asset is ignored
-!/[Aa]ssets/**/*.meta
-
-# JetBrains Rider
-.idea/
-
-# VS Code
-.vscode/
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+
+# Media
 *.mp4
