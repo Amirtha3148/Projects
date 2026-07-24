@@ -29,4 +29,4 @@ with open("intent_model.pkl", "wb") as f:
 with open("vectorizer.pkl", "wb") as f:
     pickle.dump(vectorizer, f)
 
-print("✅ Model training completed and saved!")
+print("[OK] Model training completed and saved!")

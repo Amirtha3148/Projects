@@ -1,6 +1,14 @@
 {
   "intents": [
     {
+      "tag": "greeting",
+      "patterns": ["Hello", "Hi", "Hey", "வணக்கம்", "ஹலோ"],
+      "responses": {
+        "en": ["Hello! How can I help you today?", "Hi there! What can I do for you?"],
+        "ta": ["வணக்கம்! நான் எப்படி உதவலாம்?", "வணக்கம்! என்ன உதவி வேண்டும்?"]
+      }
+    },
+    {
       "tag": "help",
       "patterns": ["Help", "I need help", "Help me", "சகாயம்", "எனக்கு உதவி வேண்டும்"],
       "responses": {
