@@ -4,17 +4,31 @@ from gtts import gTTS
 import os
 import tempfile
 import pygame
-import json
 import random
 import pickle
 import time
+import uuid
 import langid
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-# Load intents
-with open("intents.json", "r", encoding='utf-8') as f:
-    intents = json.load(f)
+import db
+
+# ---------------------------------------------------------------------------
+# Database initialization (runs once per app start, idempotent)
+# ---------------------------------------------------------------------------
+db.init_db()
+
+# ---------------------------------------------------------------------------
+# Load intents from PostgreSQL (fallback to intents.json if DB is empty)
+# ---------------------------------------------------------------------------
+intents = db.load_intents_from_db()
+
+if not intents["intents"]:
+    # DB is empty — fall back to JSON so the app still works before migration
+    import json
+    with open("intents.json", "r", encoding='utf-8') as f:
+        intents = json.load(f)
 
 # Load trained model and vectorizer
 with open("intent_model.pkl", "rb") as f:
@@ -25,13 +39,33 @@ with open("vectorizer.pkl", "rb") as f:
 # Initialize pygame mixer for voice output
 pygame.mixer.init()
 
+# ---------------------------------------------------------------------------
 # Session state
+# ---------------------------------------------------------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "input_mode" not in st.session_state:
     st.session_state.input_mode = "text"
 if "selected_lang" not in st.session_state:
     st.session_state.selected_lang = "en"  # default to English
+if "db_session_id" not in st.session_state:
+    # Generate a unique session identifier and register it in the DB
+    uid = str(uuid.uuid4())
+    st.session_state.db_session_id = db.get_or_create_session(uid, "en")
+    st.session_state.session_uid = uid
+
+    # Load any prior chat history for this session (survives page reloads)
+    prior = db.get_chat_history(st.session_state.db_session_id)
+    for msg in prior:
+        if msg["role"] == "user":
+            prefix = "🎤 " if msg["input_mode"] == "voice" else ""
+            st.session_state.chat_history.append((f"{prefix}{msg['message']}", ""))
+        elif msg["role"] == "bot":
+            # Pair bot response with the last user entry
+            if st.session_state.chat_history and st.session_state.chat_history[-1][1] == "":
+                last_user, _ = st.session_state.chat_history[-1]
+                prefix = "🔊 " if msg["input_mode"] == "voice" else ""
+                st.session_state.chat_history[-1] = (last_user, f"{prefix}{msg['message']}")
 
 # Detect language
 def detect_language(text):
@@ -87,7 +121,9 @@ def play_voice_response(text, lang):
     except Exception as e:
         print(f"Error in voice playback: {e}")
 
-# UI Title
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 st.title("👮 CopChatbot - Tamil & English")
 
 # Language selection buttons
@@ -126,7 +162,15 @@ if mic_clicked:
     st.session_state.chat_history[-1] = (f"🎤 {user_input}", f"🔊 {response}")
     play_voice_response(response, detected_lang)
 
+    # Persist to DB
+    db.save_chat_message(st.session_state.db_session_id, "user", user_input, "voice")
+    db.save_chat_message(st.session_state.db_session_id, "bot", response, "voice")
+
 elif send_clicked and user_input:
     st.session_state.input_mode = "text"
     response = get_bot_response(user_input)
     st.session_state.chat_history.append((user_input, response))
+
+    # Persist to DB
+    db.save_chat_message(st.session_state.db_session_id, "user", user_input, "text")
+    db.save_chat_message(st.session_state.db_session_id, "bot", response, "text")
